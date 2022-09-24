@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 
 @Service
 public class RefreshService {
@@ -21,15 +23,26 @@ public class RefreshService {
 
     public RefreshService() {
         refreshedStocks = new HashMap<>();
+        refreshInterval();
     }
 
-    public void refreshInterval() {
-        schedule.scheduleAtFixedRate(() = >
+    public boolean shouldRefresh(final StockWrapper stock) {
+        if (!refreshedStocks.containsKey(stock)) {
+            refreshedStocks.put(stock, false);
+            return true;
+        }
+        return refreshedStocks.get(stock);
+    }
+
+    private void refreshInterval() {
+        schedule.scheduleAtFixedRate(() ->
                 refreshedStocks.forEach((stock, value) -> {
                     if (stock.getLastAccessed().isBefore(LocalDateTime.now().minus(refreshPeriod))) {
-                        System.out.println("");
+                        System.out.println("Setting should refresh " + stock.getStock().getSymbol());
+                        refreshedStocks.remove(stock);
+                        refreshedStocks.put(stock.withLastAccessed(LocalDateTime.now()), true);
                     }
-                });)
-    )
+                }), 0, 15, SECONDS);
+
     }
 }
